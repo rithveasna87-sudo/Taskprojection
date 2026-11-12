@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Team Project Tracker</title>
+<script src="assets/js/theme-init.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+<div class="mgr-banner" id="mgrBanner"><div>👤 <b>Manager View</b> · <span id="mgrTrail"></span> · <span id="mgrCount"></span></div><div class="acts"><button class="btn-light" id="mgrChange">Change brand</button><button class="btn-danger" id="mgrExit">Exit Manager View</button></div></div>
+<div class="login-screen" id="loginScreen">
+  <button class="btn-light theme-toggle login-theme" type="button" title="Switch between light and dark mode"></button>
+  <div class="login-card">
+    <div class="login-brand"><div class="logo"><img src="assets/images/logo.png" alt="Chip Mong FoodBev"></div><div><h2>Team Project Tracker</h2><div class="sub">Secure team workspace</div></div></div>
+    <div class="login-sub">Sign in with your team account to continue.</div>
+    <form id="loginForm">
+      <div class="form-row"><label for="loginUsername">Username</label><input id="loginUsername" autocomplete="username" required placeholder="Enter username"></div>
+      <div class="form-row"><label for="loginPassword">Password</label><input id="loginPassword" type="password" autocomplete="current-password" required placeholder="Enter password"></div>
+      <div class="login-error" id="loginError">Incorrect username or password. Please try again.</div>
+      <button class="btn-primary" type="submit" style="width:100%;padding:12px">Log in</button>
+    </form>
+  </div>
+</div>
+<div class="app" id="trackerView">
+<header class="top"><div class="brand"><div class="logo"><img src="assets/images/logo.png" alt="Chip Mong FoodBev"></div><div><h1>Team Project Tracker</h1><div class="sub">Keep tasks, progress and blockers in one place</div></div></div><div class="actions"><a class="btn-light" id="calendarBtn" href="#calendar" style="display:inline-flex;align-items:center;text-decoration:none;border-radius:10px;padding:10px 14px;font-weight:650">📅 Calendar</a><button class="btn-light" id="managerBtn">👤 Manager View</button><button class="btn-light" id="importBtn">⇧ Import Excel</button><button class="btn-light" id="exportBtn">⇩ Export Excel</button><button class="btn-primary" id="addBtn">＋ Add task</button><button class="btn-light theme-toggle" type="button" title="Switch between light and dark mode"></button><div class="dz-bell-wrap" id="dzBellWrap"><button class="btn-light dz-bell" id="dzBell" type="button" aria-haspopup="true" aria-label="Tasks due today" title="Tasks due today"><span class="dz-bell-ico">🔔</span><span class="dz-bell-badge" id="dzBellBadge">0</span></button><div class="dz-bell-menu" id="dzBellMenu"></div></div><div class="logout-wrap"><button class="btn-light" id="logoutBtn">Log out</button><button class="btn-light" id="archivedBtn" type="button">🗄 Archived <span id="archivedCount"></span></button></div></div></header>
+<div id="dashboardContent"><section class="stats stats-summary">
+<div class="stat total-task-card" id="totalTaskCard" role="button" tabindex="0" title="Open all project tasks"><div class="label">TOTAL TASK</div><div class="num" id="totalCount">0</div><div class="task-breakdown"><div><span>All Brand:</span><b id="totalBrandCount">0</b></div><div><span>Designer:</span><b id="totalDesignerCount">0</b></div></div></div>
+<div class="stat total-task-card" id="completedTaskCard" role="button" tabindex="0" title="View completed project tasks"><div class="label">COMPLETED</div><div class="num" id="doneCount">0</div><div class="task-breakdown"><div><span>All Brand:</span><b id="doneBrandCount">0</b></div><div><span>Designer:</span><b id="doneDesignerCount">0</b></div></div></div>
+<div class="stat total-task-card" id="inProgressTaskCard" role="button" tabindex="0" title="View in-progress project tasks"><div class="label">IN PROGRESS</div><div class="num" id="progressCount">0</div><div class="task-breakdown"><div><span>All Brand:</span><b id="progressBrandCount">0</b></div><div><span>Designer:</span><b id="progressDesignerCount">0</b></div></div></div>
+<div class="stat alertcard"><div class="label" style="color:var(--red)">🚨 DEADLINE ALERT</div><div class="num" id="problemCount" style="color:var(--red)">0</div><div class="task-breakdown"><div><span>All Brand:</span><b id="alertBrandCount">0</b></div><div><span>Designer:</span><b id="alertDesignerCount">0</b></div></div></div>
+</section>
+<section class="analytics">
+ <div class="analytics-head"><div><h2 style="margin:0;font-size:17px">Project Analytics</h2><div class="sub">Interactive diagrams · Automatically updated from your tasks</div></div><button class="btn-light" id="clearChartFilters">Clear chart filters</button></div>
+ <div class="analytics-grid">
+  <section class="chart-card"><h3>Overall progress</h3><div class="chart-sub">Average completion across all tasks</div><div id="progressChart"></div></section>
+  <section class="chart-card"><h3>Task status</h3><div class="chart-sub">Select a status to filter the task list</div><div id="statusChart"></div></section>
+  <section class="chart-card"><h3>Priority distribution</h3><div class="chart-sub">Select a priority to filter tasks</div><div id="priorityChart"></div></section>
+  <section class="chart-card"><h3>Brand workload</h3><div class="chart-sub">Tasks held by each brand · Select a brand to filter</div><div id="brandChart"></div></section>
+  <section class="chart-card alertcard"><div class="panel-head"><h2 style="color:var(--red)">🚨 Deadline Alert <span class="small" style="font-weight:500">· next 5 days</span></h2><span class="pill urgent"><span id="problemCount2">0</span> due</span></div><div class="alert-head"><span>Project name</span><span>Assigned to</span></div><div id="deadlineList" class="alert-scroll"></div><div id="teamChart" hidden></div></section>
+  <section class="chart-card"><h3>Problem tracking</h3><div class="chart-sub">Open and resolved issues by severity</div><div id="problemChart"></div></section>
+  <section class="chart-card wide"><h3>Project timeline · Gantt chart</h3><div class="chart-sub">Task duration from start date to deadline. Select a task to edit it.</div><div id="ganttChart"></div></section>
+ </div>
+</section>
+</div>
+<div id="archivePage"><div class="tasks-page-head"><div class="arch-nav"><button type="button" class="back-dashboard-btn" id="archBackDash">← Back to Dashboard</button><button type="button" class="back-dashboard-btn" id="archToBoard">Design board</button></div></div><main class="panel"><div class="panel-head"><h2>🗄 Archived tasks</h2><div class="filters"><input class="field" id="archSearch" placeholder="Search archived…"><div class="dz-chips" id="archChips"></div></div></div><div class="dz-archive-grid" id="archiveList"></div></main></div>
+<div id="tasksPage"><div class="tasks-page-head"><button type="button" class="back-dashboard-btn" id="backToDashboard">← Back to Dashboard</button></div><div class="notice" id="sevBanner" hidden style="display:none;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px"><span id="sevBannerText"></span><button type="button" class="btn-light" id="sevClear" style="padding:6px 12px">✕ Clear filter</button></div><div class="layout"><main class="panel"><div class="panel-head"><h2>Project tasks</h2><div class="filters"><input class="field" id="search" placeholder="Search tasks…"><select class="field" id="priorityFilter"><option value="">All priorities</option><option>Urgent</option><option>Important</option><option>Normal</option></select><select class="field" id="brandFilter"><option value="">All brands</option><option>CED</option><option>IZE</option><option>Exprezz</option><option>CW</option><option>Cambodia COLA</option><option>B.P.S.MV Management</option><option>Designer</option></select><select class="field" id="typeFilter"><option value="">All types</option><option>Digital</option><option>On-ground</option><option>Branding</option></select><select class="field" id="statusFilter"><option value="">All progress</option><option value="0">Not started</option><option value="inprogress">In progress</option><option value="25">25%</option><option value="50">50%</option><option value="75">75%</option><option value="100">Completed</option></select></div></div><div class="task-list" id="taskList"></div></main>
+<aside class="side"><section class="panel"><div class="panel-head"><h2>Reported problems</h2><span class="pill urgent" id="issueBadge">0 open</span></div><select class="field" id="issueSort" onchange="render()" style="width:100%;margin:-4px 0 10px" aria-label="Sort problems by severity"><option value="">Sort: Newest first</option><option value="high">Severity: High → Medium → Low</option><option value="low">Severity: Low → Medium → High</option></select><div id="issueList" style="max-height:520px;overflow-y:auto;padding-right:4px"><div class="empty">No problems reported yet.</div></div></section><section class="panel"><h2 style="margin-bottom:8px">Quick guide</h2><div class="small">• Add tasks and assign an owner.<br>• Update progress in 25% steps.<br>• Report blockers directly on a task.<br>• Attach reference links or files.<br>• Import/export your task list using Excel.</div><div class="notice">Tasks are saved to the team database, so everyone sees the same data and changes appear live.</div></section></aside></div></div>
+</div>
+<div id="calendarHost" hidden></div>
+<template id="calendarTemplate"><style>
+:host{color-scheme:light;--bg:#f5f7fb;--panel:#fff;--text:#172033;--muted:#718096;--line:#e7ebf2;--green:#16a36a;--green2:#e9f8f0;--red:#df4b55;--redbg:#fff0f0;--amber:#b7791f;--amberbg:#fff7e6;--blue:#4169e1;--c-field:#fff;--c-btntxt:#344054;--c-btnhover:#f3f5f9;--c-logo:#e5f7ee;--c-day:#fafbfd;--c-dayhas:#fff;--c-dayhover:#f3f6ff;--c-chip:#eef3ff;--c-chiptxt:#4965b8;--c-pop:#fff;--c-popline:#dfe5ee;--c-popshadow:rgba(24,39,75,.18);--c-track:#edf0f4;--c-tag:#f0f2f6;--c-tagtxt:#596579;--c-todaytxt:#fff}
+:host([data-theme="dark"]){color-scheme:dark;--bg:#0f141c;--panel:#171e29;--text:#e6eaf2;--muted:#8d98ab;--line:#263042;--green:#22c07f;--green2:#123526;--red:#f06b74;--redbg:#3a1c21;--amber:#e0a43a;--amberbg:#3a2c14;--blue:#7b9cff;--c-field:#1d2532;--c-btntxt:#cfd6e2;--c-btnhover:#232d3c;--c-logo:#123526;--c-day:#141a24;--c-dayhas:#19212e;--c-dayhover:#1d2738;--c-chip:#1c2847;--c-chiptxt:#93acff;--c-pop:#1b2330;--c-popline:#334058;--c-popshadow:rgba(0,0,0,.6);--c-track:#232c3a;--c-tag:#232c3a;--c-tagtxt:#aab4c5;--c-todaytxt:#0b1a12}
+*{box-sizing:border-box}.cal-root{margin:0;background:var(--bg);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text)}
+button,input{font:inherit}button,a.btn{cursor:pointer;border:0;border-radius:10px;padding:10px 14px;font-weight:650;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn-light{background:var(--c-field);border:1px solid var(--line);color:var(--c-btntxt)}.btn-light:hover{background:var(--c-btnhover)}
+.app{max-width:1240px;margin:auto;padding:28px 24px 60px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:13px;background:var(--c-logo);color:var(--green);display:grid;place-items:center;font-size:22px;font-weight:800}
+.brand h1{font-size:21px;margin:0;letter-spacing:-.5px}.sub{color:var(--muted);font-size:12px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+.cal-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.cal-head h2{margin:0;font-size:20px;min-width:190px}.nav{display:flex;gap:8px}
+.legend{display:flex;gap:14px;color:var(--muted);font-size:12px;flex-wrap:wrap}.legend span:before{content:'';display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;background:var(--c)}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.dow{color:var(--muted);font-size:12px;font-weight:650;text-align:center;padding:4px 0}
+.day{position:relative;min-height:104px;border:1px solid var(--line);border-radius:11px;padding:7px;background:var(--c-day);transition:border-color .15s,background .15s,transform .15s}
+.day.out{opacity:.38}.day.today{border-color:var(--green)}.day.today .num{background:var(--green);color:var(--c-todaytxt)}
+.day.has{cursor:pointer;background:var(--c-dayhas)}.day.has:hover,.day.has:focus{border-color:var(--blue);background:var(--c-dayhover);transform:translateY(-2px);z-index:20;outline:none}
+.num{display:inline-grid;place-items:center;min-width:24px;height:24px;border-radius:7px;font-weight:700;font-size:12px}
+.count{float:right;font-size:11px;color:var(--muted);margin-top:4px}
+.chip{display:block;margin-top:4px;padding:2px 7px;border-radius:6px;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:var(--c-chip);color:var(--c-chiptxt);border-left:3px solid currentColor}
+.chip.urgent{background:var(--redbg);color:var(--red)}.chip.important{background:var(--amberbg);color:var(--amber)}.chip.done{background:var(--green2);color:var(--green);text-decoration:line-through}
+.more{font-size:11px;color:var(--muted);margin-top:4px}
+.pop{position:absolute;top:calc(100% + 8px);left:50%;transform:translate(-50%,6px);width:290px;max-width:80vw;background:var(--c-pop);border:1px solid var(--c-popline);border-radius:13px;padding:12px;box-shadow:0 18px 50px var(--c-popshadow);opacity:0;visibility:hidden;transition:opacity .15s,transform .15s;z-index:30;cursor:default}
+.day.has:hover .pop,.day.has:focus .pop,.day.has:focus-within .pop{opacity:1;visibility:visible;transform:translate(-50%,0)}
+.day.edge-l .pop{left:0;transform:translate(0,6px)}.day.edge-l:hover .pop,.day.edge-l:focus .pop{transform:translate(0,0)}
+.day.edge-r .pop{left:auto;right:0;transform:translate(0,6px)}.day.edge-r:hover .pop,.day.edge-r:focus .pop{transform:translate(0,0)}
+.day.low .pop{top:auto;bottom:calc(100% + 8px)}
+.pop h4{margin:0 0 8px;font-size:13px}.pop h4 small{color:var(--muted);font-weight:500}
+.chip[data-id],.pi[data-id]{cursor:pointer}.pi[data-id]:hover b{text-decoration:underline}.pi{padding:8px 0;border-top:1px solid var(--line)}.pi:first-of-type{border-top:0;padding-top:0}
+.pi b{display:block;font-size:13px}.pi .m{color:var(--muted);font-size:12px;display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.bar{height:5px;border-radius:9px;background:var(--c-track);margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--green)}
+.tag{padding:1px 7px;border-radius:99px;font-size:11px;background:var(--c-tag);color:var(--c-tagtxt)}.tag.urgent{background:var(--redbg);color:var(--red)}.tag.important{background:var(--amberbg);color:var(--amber)}.tag.overdue{background:var(--redbg);color:var(--red)}
+.empty{color:var(--muted);text-align:center;padding:16px 0 2px;font-size:13px}
+@media(max-width:760px){.day{min-height:70px;padding:5px}.chip{display:none}.day.has .num{background:var(--c-chip);color:var(--c-chiptxt)}.count{float:none;display:block}.app{padding:18px 10px 40px}}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--c-field)}.seg button{border:0;border-radius:0;padding:9px 16px;background:transparent;color:var(--c-btntxt);font-weight:650}.seg button+button{border-left:1px solid var(--line)}.seg button:hover{background:var(--c-btnhover)}.seg button.on{background:var(--green);color:var(--c-todaytxt)}
+.week .day{min-height:250px}.week .chip{white-space:normal;overflow:visible;padding:4px 7px}.week .day .num{min-width:auto;padding:0 7px}.week .mon{font-size:11px;color:var(--muted);margin-left:5px;font-weight:600}
+.qwrap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:6px}.qmonth h3{margin:0 0 8px;font-size:14px}.qmonth .grid{gap:4px}.qmonth .dow{font-size:11px}.qmonth .day{min-height:52px;padding:4px}.qmonth .chip,.qmonth .more{display:none}.qmonth .count{float:none;display:block;margin-top:2px}.qmonth .day.has .num{background:var(--c-chip);color:var(--c-chiptxt)}.qmonth .day.today .num{background:var(--green);color:var(--c-todaytxt)}.day.blank{border-color:transparent;background:transparent;pointer-events:none}
+@media(max-width:900px){.qwrap{grid-template-columns:1fr}}@media(max-width:760px){.week .chip{display:block}.week .day{min-height:150px}.seg button{padding:8px 11px}}
+
+/* calendar premium layer */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+.cal-root{font-family:'Inter',ui-sans-serif,system-ui,sans-serif;letter-spacing:-.006em;
+ background:radial-gradient(900px 460px at 8% -8%,color-mix(in srgb,var(--green) 13%,transparent),transparent 60%),radial-gradient(800px 460px at 100% 0,color-mix(in srgb,var(--blue) 12%,transparent),transparent 60%),var(--bg);min-height:100vh}
+:host{--bg:#f3f5fa;--line:#e5e9f2;--green:#10b981;--blue:#4f6df5}
+:host([data-theme="dark"]){--bg:#080c14;--panel:#111826;--line:#1e2838;--green:#34d399;--blue:#8aa2ff;--c-field:#151d2c;--c-day:#0d1420;--c-dayhas:#131c2b;--c-pop:#162033}
+.app{max-width:1280px;padding:22px 28px 80px}
+.top{padding:12px 16px;border:1px solid var(--line);border-radius:22px;background:color-mix(in srgb,var(--panel) 80%,transparent);backdrop-filter:blur(16px);box-shadow:0 12px 32px -10px rgba(0,0,0,.25);margin-bottom:24px}
+.logo{border-radius:14px;width:46px;height:46px;background:linear-gradient(135deg,#10b981,#06b6d4);color:#fff;box-shadow:0 8px 20px -6px rgba(16,185,129,.6)}
+.brand h1{font-weight:800;letter-spacing:-.035em;font-size:20px}
+button,a.btn{border-radius:12px;font-weight:600;transition:transform .18s cubic-bezier(.22,.8,.3,1),box-shadow .2s,border-color .2s,background .2s}
+.btn-light:hover{transform:translateY(-1px);border-color:var(--green);box-shadow:0 8px 20px -6px color-mix(in srgb,var(--green) 40%,transparent)}
+.panel{border-radius:24px;padding:24px;box-shadow:0 1px 2px rgba(0,0,0,.04),0 18px 44px -14px rgba(0,0,0,.25)}
+.cal-head h2{font-size:24px;font-weight:800;letter-spacing:-.04em}
+.seg{border-radius:12px;padding:3px;gap:2px;border:1px solid var(--line);background:color-mix(in srgb,var(--c-field) 90%,transparent)}
+.seg button{border-radius:9px;padding:8px 16px;border:0!important}
+.seg button.on{background:linear-gradient(135deg,#10b981,#06b6d4);color:#fff;box-shadow:0 6px 16px -4px rgba(16,185,129,.55)}
+.legend span{font-weight:600}.legend span:before{border-radius:50%;box-shadow:0 0 8px var(--c)}
+.grid{gap:8px}
+.dow{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:6px 0}
+.day{border-radius:14px;min-height:112px;padding:9px;transition:transform .2s cubic-bezier(.22,.8,.3,1),border-color .2s,background .2s,box-shadow .2s}
+.day.has{background:linear-gradient(180deg,var(--c-dayhas),color-mix(in srgb,var(--c-dayhas) 80%,var(--c-chip)))}
+.day.has:hover,.day.has:focus{box-shadow:0 18px 34px -14px color-mix(in srgb,var(--blue) 55%,transparent);transform:translateY(-3px)}
+.day.today{border-width:1.5px;box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 18%,transparent)}
+.num{border-radius:9px;min-width:26px;height:26px;font-size:12.5px;font-weight:700}
+.day.today .num{background:linear-gradient(135deg,#10b981,#06b6d4);box-shadow:0 4px 12px -2px rgba(16,185,129,.6)}
+.count{background:color-mix(in srgb,var(--blue) 18%,transparent);color:var(--blue);padding:1px 8px;border-radius:99px;font-weight:700;margin-top:2px}
+.chip{border-radius:8px;padding:3px 8px;font-weight:600;border-left-width:3px}
+.pop{border-radius:18px;padding:16px;box-shadow:0 30px 70px -12px var(--c-popshadow);backdrop-filter:blur(14px)}
+.pop h4{font-size:13.5px;font-weight:750;letter-spacing:-.02em}
+.pi{padding:10px 0}.bar{height:6px}.bar i{background:linear-gradient(90deg,#10b981,#06b6d4);border-radius:9px}
+.tag{font-weight:650;padding:2px 9px}
+.qmonth{padding:14px;border:1px solid var(--line);border-radius:18px;background:color-mix(in srgb,var(--c-day) 70%,transparent)}
+.qmonth h3{font-weight:800;letter-spacing:-.02em}
+
+</style><style>
+.app{max-width:none!important;width:100%;padding:clamp(10px,1.6vw,32px) clamp(12px,2.2vw,48px) 80px!important}
+.cal-root{min-height:100vh;min-height:100dvh}
+.day{min-height:clamp(84px,11vh,150px)}
+.week .day{min-height:clamp(200px,34vh,420px)}
+.qmonth .day{min-height:clamp(40px,6vh,70px)}
+@media(max-height:800px){.day{min-height:84px}}
+</style>
+<div class="cal-root"><div class="app">
+<header class="top"><div class="brand"><div class="logo">📅</div><div><h1>Deadline Calendar</h1><div class="sub">Every project shown on its deadline day · Hover a date to see all projects due</div></div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-light theme-toggle" type="button" title="Switch between light and dark mode"></button><a class="btn btn-light" href="#tracker">← Back to tracker</a></div></header>
+<section class="panel">
+  <div class="cal-head">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><h2 id="monthLabel"></h2><div class="nav"><button class="btn-light" id="prev" aria-label="Previous">‹</button><button class="btn-light" id="todayBtn">Today</button><button class="btn-light" id="next" aria-label="Next">›</button></div><div class="seg" id="seg"><button data-v="week">Weekly</button><button data-v="month">Monthly</button><button data-v="quarter">Quarterly</button></div></div>
+    <div class="legend"><span style="--c:var(--red)">Urgent</span><span style="--c:var(--amber)">Important</span><span style="--c:#93acff">Normal</span><span style="--c:var(--green)">Completed</span></div>
+  </div>
+  <div class="sub" id="monthSummary" style="margin:-4px 0 12px"></div>
+  <div class="grid" id="dows"></div>
+  <div class="grid" id="days" style="margin-top:6px"></div>
+</section>
+</div></div></template>
+<div class="modal-back" id="managerModal"><div class="modal" style="max-width:420px"><button class="close" data-close="managerModal">✕</button>
+<div id="mgrStepLogin"><h2>Manager View</h2><p class="hint">Sign in to review each team member's tasks.</p>
+<form id="mgrLoginForm" autocomplete="off"><div class="form-row"><label for="mgrUser">Username</label><input id="mgrUser" required placeholder="Enter username"></div><div class="form-row" style="margin-top:12px"><label for="mgrPass">Password</label><input id="mgrPass" type="password" required placeholder="Enter password"></div><div class="login-error" id="mgrError" style="display:none;margin-top:10px">Incorrect username or password. Please try again.</div><div class="modal-actions"><button type="button" class="btn-light" data-close="managerModal">Cancel</button><button class="btn-primary" type="submit">Log in</button></div></form></div>
+<div id="mgrStepBrand" hidden><h2>Select brand</h2><p class="hint">Choose a brand to review all of its projects.</p><div class="mgr-choices" id="mgrBrands"></div></div>
+</div></div>
+<input type="file" id="excelFile" accept=".xlsx,.xls,.csv" hidden>
+<div class="modal-back" id="taskModal"><div class="modal"><button class="close" data-close="taskModal">✕</button><h2 id="taskModalTitle">Add task</h2><p class="hint">Create a task and keep its owner, priority and deadline clear.</p><form id="taskForm"><input type="hidden" id="editId"><div class="form-grid"><div class="form-row full"><label>Task name *</label><input id="taskName" required placeholder="e.g. Prepare campaign artwork"></div><div class="form-row"><label>Brand *</label><select id="taskBrand" required><option value="">— Select brand —</option><option>CED</option><option>IZE</option><option>Exprezz</option><option>CW</option><option>Cambodia COLA</option><option>B.P.S.MV Management</option><option>Designer</option></select></div><div class="form-row"><label>Priority</label><select id="taskPriority"><option>Urgent</option><option>Important</option><option selected>Normal</option></select></div><div class="form-row"><label>Project type</label><select id="taskType"><option value="">— Select type —</option><option>Digital</option><option>On-ground</option><option>Branding</option></select></div><div class="form-row"><label>Assigned to</label><input id="taskOwner" placeholder="Team member"></div><div class="form-row"><label>Start date</label><input id="taskStartDate" type="date"></div><div class="form-row"><label>Deadline</label><input id="taskDeadline" type="date"></div><div class="form-row" id="dzDesignerRow" style="display:none"><label>Designer responsible</label><input id="taskDesigner" list="dzDesignerList" placeholder="Designer name" autocomplete="off"><datalist id="dzDesignerList"></datalist></div><div class="form-row"><label>Progress</label><select id="taskProgress"><option value="0">0%</option><option value="25">25%</option><option value="50">50%</option><option value="75">75%</option><option value="100">100%</option></select></div><div class="form-row full"><label>Description / notes</label><textarea id="taskNotes" placeholder="What needs to be done?"></textarea></div><div class="form-row full"><label>Reference links (one URL per line)</label><textarea id="taskRefs" placeholder="https://drive.google.com/...&#10;https://www.pinterest.com/..."></textarea></div><div class="form-row full"><label>Attach files or photos (optional)</label><input id="taskFiles" type="file" multiple><div class="file-note" id="taskFilesNote">Up to 5 MB per file.</div></div><div class="form-row full" id="dzReqRow"><label class="dz-toggle"><input type="checkbox" id="taskDzReq"> 🎨 Request designer <span class="small" style="font-weight:500">— you'll fill in a short brief for the designer</span></label></div></div><div class="modal-actions"><button type="button" class="btn-light" data-close="taskModal">Cancel</button><button class="btn-primary" type="submit">Save task</button></div></form></div></div>
+<div class="modal-back" id="dzBriefModal"><div class="modal" style="max-width:560px"><button type="button" class="close" id="dzBriefClose">✕</button><h2>🎨 Designer brief</h2><p class="hint">This is what the designer will see as the request description. Your task description stays private to your brand.</p><form id="dzBriefForm"><div class="form-grid"><div class="form-row full"><label for="dzbEvent">Event Name <span class="req-star">*</span></label><input id="dzbEvent" required placeholder="e.g. Pchum Ben Promotion"></div><div class="form-row full"><label for="dzbKey">Key Message <span class="req-star">*</span></label><textarea id="dzbKey" required placeholder="What should the audience understand or feel after seeing this?"></textarea></div><div class="form-row full"><label for="dzbMood">Mood &amp; Tone <span class="req-star">*</span></label><textarea id="dzbMood" required placeholder="e.g. Festive, warm, premium, playful…"></textarea></div><div class="form-row full"><label for="dzbCreative">Creative <span class="req-star">*</span></label><textarea id="dzbCreative" required placeholder="What needs to be designed? e.g. Poster, social banner, standee — sizes / formats"></textarea></div><div class="form-row full"><label for="dzbSize">Size <span class="req-star">*</span></label><input id="dzbSize" required placeholder="e.g. A3, 1080x1080 px, 60x160 cm"></div><div class="form-row full"><label for="dzbRef">Reference <span class="small" style="font-weight:500">(optional)</span></label><textarea id="dzbRef" placeholder="Links or notes for inspiration (one per line)"></textarea></div></div><div class="modal-actions"><button type="button" class="btn-light" id="dzBriefCancel">Cancel</button><button class="btn-primary" type="submit">Save brief</button></div></form></div></div>
+<div class="modal-back" id="problemModal"><div class="modal" style="max-width:520px"><button class="close" data-close="problemModal">✕</button><h2>Report a problem</h2><p class="hint" id="problemTaskLabel">Tell the team what is blocking this task.</p><form id="problemForm"><input type="hidden" id="problemTaskId"><div class="form-grid"><div class="form-row full"><label>Problem *</label><input id="problemTitle" required placeholder="e.g. Waiting for product photos"></div><div class="form-row"><label>Severity</label><select id="problemSeverity"><option>Low</option><option selected>Medium</option><option>High</option></select></div><div class="form-row"><label>Reported by</label><input id="problemReporter" placeholder="Your name"></div><div class="form-row full"><label>Details</label><textarea id="problemDetails" placeholder="Describe what happened and what help is needed."></textarea></div></div><div class="modal-actions"><button type="button" class="btn-light" data-close="problemModal">Cancel</button><button class="btn-primary" type="submit">Submit problem</button></div></form></div></div>
+<div class="modal-back" id="refsModal"><div class="modal" style="max-width:560px"><button class="close" data-close="refsModal">✕</button><h2>Task references</h2><p class="hint" id="refsTaskLabel"></p><div id="refsDisplay" class="ref-list"></div><form id="refForm" style="margin-top:14px"><div class="form-grid"><div class="form-row"><label>Reference name</label><input id="refName" placeholder="Design inspiration"></div><div class="form-row"><label>Reference URL</label><input id="refUrl" type="url" placeholder="https://..."></div><div class="form-row full"><label>Or upload a file / photo</label><input id="refFile" type="file" multiple><div class="file-note">Add a link, a file, or both. Up to 5 MB per file.</div></div></div><div class="modal-actions"><button class="btn-primary" type="submit" id="refSubmit">＋ Add reference</button></div></form></div></div>
+<div class="modal-back" id="importModal"><div class="modal"><button class="close" data-close="importModal">✕</button><h2>Import tasks from Excel</h2><p class="hint">Upload a spreadsheet, map its columns, review the rows and choose how duplicates should be handled.</p><div id="importStep1"><div class="notice">Supported: .xlsx, .xls and .csv. Your first worksheet will be read. Required field: Task Name.</div><div class="form-row"><label>Select Excel file</label><input type="file" id="importInput" accept=".xlsx,.xls,.csv"></div><div class="modal-actions"><button class="btn-light" id="templateBtn">Download template</button></div></div><div id="importStep2" hidden><h3 style="font-size:14px">1. Match spreadsheet columns</h3><div class="mapping-grid" id="mappingGrid"></div><h3 style="font-size:14px;margin-top:18px">2. Preview and validate</h3><div id="importSummary" class="notice"></div><div class="preview-wrap" id="previewTable"></div><div style="margin-top:14px" class="form-row"><label>When a duplicate is found</label><select id="duplicateMode"><option value="skip">Skip duplicate (recommended)</option><option value="update">Update existing task</option><option value="new">Import as a new task</option></select></div><div class="small" style="margin-top:8px">Duplicates are matched by Task ID when present; otherwise by task name (case-insensitive).</div></div><div class="modal-actions"><button type="button" class="btn-light" data-close="importModal">Cancel</button><button type="button" class="btn-primary" id="confirmImport" disabled>Import valid tasks</button></div></div></div>
+
+<script src="assets/js/app.js"></script>
+</body></html>

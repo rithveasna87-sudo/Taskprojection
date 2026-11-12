@@ -1,0 +1,10 @@
+{
+  "name": "team-project-tracker",
+  "version": "1.0.0",
+  "description": "Team Project Tracker with real-time sync (SQLite)",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=22.13" },
+  "license": "UNLICENSED",
+  "private": true
+}
